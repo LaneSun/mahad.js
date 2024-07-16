@@ -55,6 +55,9 @@ const EM_ATTR_GUARDS = {
         val => elem.classList.add(val),
         val => elem.classList.remove(val),
     ],
+    "src": elem => [
+        val => elem.src = val,
+    ],
     "value": (elem, mattr) => {
         elem.addEventListener("change", () => {
             mattr.val = elem.value;
@@ -63,6 +66,13 @@ const EM_ATTR_GUARDS = {
             val => elem.value = val,
         ];
     },
+    "style": elem => [
+        val => val.guard(elem, v => elem.style.setProperty(val.ref(), v)),
+        val => {
+            elem.style.removeProperty(val.ref());
+            val.unset_to(elem);
+        },
+    ],
     "inner": elem => [
         (v, i) => {
             const e = v instanceof ElemMahad ? v.elem : v instanceof Node ? v : new Text(v);
@@ -91,10 +101,10 @@ global.ElemMahad = class ElemMahad extends Mahad {
     attr(key, mattr = ['']) {
         const guard = EM_ATTR_GUARDS[key];
         if (guard) {
-            mattr
+            this.postfix(mattr
                 .ref(key)
-                .guard(null, ...guard(this.elem, mattr));
-            this.postfix(mattr);
+                .guard(null, ...guard(this.elem, mattr))
+            );
         }
         return this;
     }
@@ -117,16 +127,6 @@ global.ElemMahad = class ElemMahad extends Mahad {
 
 // window.onload = () => {
 
-// value = ["Lane Sun"];
-// checked = [false];
-
-// const {div, h1, input} = EM;
-
-// div.id("view").class("a", "b")(
-//     h1.$text(value.bmap(v => `Hello ${v}!`))(),
-//     input.$value(value)(),
-// ).attach(document.body);
-
 // data = M.div(
 //     M.h1("Title"),
 //     M.p(
@@ -142,7 +142,13 @@ global.ElemMahad = class ElemMahad extends Mahad {
 // map_fn(data).attach(document.body);
 
 // data.postfix(M.p("new line: "));
-// data[2].postfix(M.b("bold text"), " and ", M.i("italic text"), " and ", M.del("this will be deleted"));
+// data[2].postfix(
+//     M.b("bold text"),
+//     " and ",
+//     M.i("italic text"),
+//     " and ",
+//     M.del("this will be deleted")
+// );
 // data[2].unpostfix(2);
 
 // };

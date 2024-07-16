@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+    <title>Mahad</title>
+    <script src="mahad.js"></script>
+    <script src="mahad-dom.js"></script>
+</head>
+<body>
+    <script>
+
+        const value = ["Mahad Force"];
+        const size = [1];
+        const rotate = [0];
+
+        const {div, h1, img, input} = EM;
+
+        const slider = (m = [0]) => {
+            const em = div.class("slider")();
+            const elem = em.elem;
+            em.postfix(m
+                .guard(null,
+                    val => elem.style.setProperty("--value", val),
+                )
+            );
+            elem.addEventListener("pointerdown", e => {
+                const update_val = e => {
+                    e.preventDefault();
+                    const rect = elem.getClientRects()[0];
+                    const x = e.clientX;
+                    const val = Math.max(0,
+                                Math.min(1,
+                                    (x - rect.left - rect.height / 2) /
+                                    (rect.width - rect.height)
+                                ));
+                    m.val = val;
+                };
+                update_val(e);
+                window.addEventListener("pointermove", update_val);
+                window.addEventListener("pointerup",
+                    () => window.removeEventListener("pointermove", update_val),
+                    {once: true},
+                );
+            });
+            return em;
+        };
+
+        div.class("root")(
+            div.class("logo").style(rotate.ref("--rotate"), size.ref("--size"))(
+                img.src("icon.svg")(),
+            ),
+            h1.class("title").$text(value.bclone())(),
+            div.class("info")("—— 源自东方的神秘力量 ——"),
+            div.class("box")(
+                div.class("i-title")("修改这个页面 😋"),
+                div.class("i-label")("标题"),
+                input.$value(value)(),
+                div.class("i-label")("大小"),
+                slider(size),
+                div.class("i-label")("旋转"),
+                slider(rotate),
+            ),
+        ).attach(document.body);
+
+    </script>
+</body>
+</html>
