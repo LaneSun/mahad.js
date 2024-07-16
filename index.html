@@ -5,27 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="icon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
-    <title>Mahad</title>
+    <title>Mahad.js</title>
     <script src="mahad.js"></script>
     <script src="mahad-dom.js"></script>
 </head>
 <body>
     <script>
 
-        const value = ["Mahad Force"];
+        const title = ["Mahad Force"];
         const size = [1];
         const rotate = [0];
 
-        const {div, h1, img, input} = EM;
+        const {div, h1, img, input} = ME;
 
-        const slider = (m = [0]) => {
-            const em = div.class("slider")();
-            const elem = em.elem;
-            em.postfix(m
-                .guard(null,
-                    val => elem.style.setProperty("--value", val),
-                )
-            );
+        const slider = (value = [0]) => {
+            const me = div.class("slider").$style({"--value": value})();
+            const elem = me.elem;
             elem.addEventListener("pointerdown", e => {
                 const update_val = e => {
                     e.preventDefault();
@@ -36,7 +31,7 @@
                                     (x - rect.left - rect.height / 2) /
                                     (rect.width - rect.height)
                                 ));
-                    m.val = val;
+                    value.val = val;
                 };
                 update_val(e);
                 window.addEventListener("pointermove", update_val);
@@ -45,19 +40,19 @@
                     {once: true},
                 );
             });
-            return em;
+            return me;
         };
 
         div.class("root")(
-            div.class("logo").style(rotate.ref("--rotate"), size.ref("--size"))(
+            div.class("logo").$style({"--rotate": rotate, "--size": size})(
                 img.src("icon.svg")(),
             ),
-            h1.class("title").$text(value.bclone())(),
+            h1.class("title").$text(title.bclone())(),
             div.class("info")("—— 源自东方的神秘力量 ——"),
             div.class("box")(
                 div.class("i-title")("修改这个页面 😋"),
                 div.class("i-label")("标题"),
-                input.$value(value)(),
+                input.$value(title)(),
                 div.class("i-label")("大小"),
                 slider(size),
                 div.class("i-label")("旋转"),
@@ -66,5 +61,6 @@
         ).attach(document.body);
 
     </script>
+    <script src="test.js"></script>
 </body>
 </html>

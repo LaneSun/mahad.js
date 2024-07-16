@@ -1,0 +1,16 @@
+{
+  "name": "mahadjs",
+  "version": "0.1.0",
+  "description": "一个为JS数组和对象添加自动绑定功能的库",
+  "author": "Lane Sun <lanesun@anlbrain.com> (https://lanesun.neocities.org/)",
+  "main": "index.html",
+  "scripts": {
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "terser-webpack-plugin": "^5.3.10",
+    "webpack": "^5.93.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "license": "Unlicense"
+}

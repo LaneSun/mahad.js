@@ -1,30 +1,27 @@
 (global => {
 
-const _em_handle_head = {
+const _me_handle_head = {
     apply: (_t, _s, args) => {
-        const em = new ElemMahad();
-        em.init();
-        if (args.length) em.attr("inner", args);
-        return em;
+        const me = new MahadElem();
+        if (args.length) me.attr("inner", args);
+        return me;
     },
     get: (_, name) => {
         const ntar = () => {};
         ntar.ename = name;
         ntar.attrs = [];
-        return new Proxy(ntar, _em_handle_tail);
+        return new Proxy(ntar, _me_handle_tail);
     },
 };
 
-const _em_handle_tail = {
+const _me_handle_tail = {
     apply: (tar, _s, args) => {
-        const em = new ElemMahad();
-        em.name = tar.ename;
-        em.init();
-        if (args.length) em.attr("inner", args);
+        const me = new MahadElem(tar.ename);
+        if (args.length) me.attr("inner", args);
         for (const [key, vals] of tar.attrs) {
-            em.attr(key, vals);
+            me.attr(key, vals);
         }
-        return em;
+        return me;
     },
     get: (tar, key) => (...args) => {
         const ntar = () => {};
@@ -34,11 +31,11 @@ const _em_handle_tail = {
         } else {
             ntar.attrs = tar.attrs.concat([[key, args]]);
         }
-        return new Proxy(ntar, _em_handle_tail);
+        return new Proxy(ntar, _me_handle_tail);
     },
 };
 
-global.EM = new Proxy(() => {}, _em_handle_head);
+global.ME = new Proxy(() => {}, _me_handle_head);
 
 const EMK_MAHAD = Symbol("mahad");
 const EM_ATTR_GUARDS = {
@@ -67,15 +64,15 @@ const EM_ATTR_GUARDS = {
         ];
     },
     "style": elem => [
-        val => val.guard(elem, v => elem.style.setProperty(val.ref(), v)),
-        val => {
-            elem.style.removeProperty(val.ref());
+        (val, key) => val.guard(elem, v => elem.style.setProperty(key, v)),
+        (val, key) => {
+            elem.style.removeProperty(key);
             val.unset_to(elem);
         },
     ],
     "inner": elem => [
         (v, i) => {
-            const e = v instanceof ElemMahad ? v.elem : v instanceof Node ? v : new Text(v);
+            const e = v instanceof MahadElem ? v.elem : v instanceof Node ? v : new Text(v);
             if (i === elem.childNodes.length) {
                 elem.append(e);
             } else {
@@ -88,24 +85,16 @@ const EM_ATTR_GUARDS = {
     ],
 };
 
-global.ElemMahad = class ElemMahad extends Mahad {
-    constructor(...inner) {
-        super(...inner);
-        this.name = "div";
-    }
-    init() {
+global.MahadElem = class MahadElem extends MahadObject {
+    constructor(name = "div") {
+        super();
+        this.name = name;
         this.elem = document.createElement(this.name);
         this.elem[EMK_MAHAD] = this;
-        return this;
     }
     attr(key, mattr = ['']) {
         const guard = EM_ATTR_GUARDS[key];
-        if (guard) {
-            this.postfix(mattr
-                .ref(key)
-                .guard(null, ...guard(this.elem, mattr))
-            );
-        }
+        if (guard) this.set(key, mattr.guard(null, ...guard(this.elem, mattr)));
         return this;
     }
     attach(elem_or_query) {
@@ -113,7 +102,7 @@ global.ElemMahad = class ElemMahad extends Mahad {
             document.querySelector(elem_or_query).append(this.elem);
         } else if (elem_or_query instanceof HTMLElement) {
             elem_or_query.append(this.elem);
-        } else if (elem_or_query instanceof ElemMahad) {
+        } else if (elem_or_query instanceof MahadElem) {
             elem_or_query.postfix(this);
         } else {
             throw "Unexpect attach target";
@@ -122,33 +111,3 @@ global.ElemMahad = class ElemMahad extends Mahad {
 };
 
 })(globalThis);
-
-// TEST
-
-// window.onload = () => {
-
-// data = M.div(
-//     M.h1("Title"),
-//     M.p(
-//         "this is some text",
-//     ),
-// );
-
-// map_fn = m => m instanceof Array ?
-//     EM[m.ref()]
-//         .$inner(m.bmap(map_fn))() :
-//     m;
-
-// map_fn(data).attach(document.body);
-
-// data.postfix(M.p("new line: "));
-// data[2].postfix(
-//     M.b("bold text"),
-//     " and ",
-//     M.i("italic text"),
-//     " and ",
-//     M.del("this will be deleted")
-// );
-// data[2].unpostfix(2);
-
-// };
