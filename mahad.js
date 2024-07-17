@@ -362,13 +362,13 @@ global.MahadObject = class MahadObject extends Object {
         return res;
     }
     delete(...keys) {
-        return this.edit(keys.map(k => [MC_EDIT, k, undefined]));
+        return this.edit(keys.map(k => [MC_MODIFY, k, undefined]));
     }
     assign(obj) {
-        return this.edit(Object.entries(obj).map(([k, v]) => [MC_EDIT, k, v]));
+        return this.edit(...Object.entries(obj).map(([k, v]) => [MC_MODIFY, k, v]));
     }
     set(key, value) {
-        return this.edit([MC_EDIT, key, value]);
+        return this.edit([MC_MODIFY, key, value]);
     }
 
     // 守卫器
