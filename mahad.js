@@ -31,45 +31,34 @@ class Shared {
         return this.edit([MC_MODIFY, ...args]);
     }
 
-    // 推送器
-
-    set_to(tar, fns, data = []) {
-        const vdata_to = this[data_to];
-        for (const type in fns) {
-            vdata_to[type].set(tar, [fns[type], data]);
-        }
-    }
-    unset_to(tar) {
-        for (const set of this[data_to]) {
-            set.delete(tar);
-        }
-    }
-
     // 监听器
 
     listen(id, fn) {
         this.set_to(id, {
             [MC_EDIT]: fn,
-        });
+        }, null, false);
         return this;
+    }
+    unlisten(id) {
+        this.unset_to(id, false);
     }
 
     // 连接器 (单向)
 
-    bind(src, fns, data) {
+    bind_from(src, fns, data) {
+        this.clear();
         src.set_to(this, fns, data);
         return this;
     }
     bind_clone(src) {
-        this.assign(src);
-        return this.bind(src, {
+        return this.bind_from(src, {
             [MC_EDIT]: (src, tar, data, cmds) => {
                 tar.edit(...cmds);
             },
         });
     }
     make_bind(fns, data) {
-        return new this.constructor().bind(this, fns, data);
+        return new this.constructor().bind_from(this, fns, data);
     }
     bclone() {
         return new this.constructor().bind_clone(this);
@@ -192,6 +181,9 @@ global.MahadArray = class MahadArray extends Array {
     delete(offset, delete_count = 1) {
         return this.modify(offset, delete_count, []);
     }
+    delete_at(value, delete_count = 1) {
+        return this.delete(this.indexOf(value), delete_count);
+    }
     prefix(...values) {
         return this.modify(0, 0, values);
     }
@@ -213,6 +205,41 @@ global.MahadArray = class MahadArray extends Array {
     set val(value) {
         this.modify(0, 1, [value]);
     }
+    clear() {
+        return this.modify(0, this.length, []);
+    }
+
+    // 推送器
+
+    set_to(tar, fns, data = [], reset = true) {
+        const vdata_to = this[data_to];
+        for (const type in fns) {
+            vdata_to[type].set(tar, [fns[type], data]);
+        }
+        if (reset) {
+            const cmd = [MC_MODIFY, 0, 0, this];
+            fns[MC_MODIFY]?.(this, tar, data, cmd, [], this);
+            fns[MC_EDIT]?.(this, tar, data, [cmd]);
+        }
+    }
+    unset_to(tar, reset = true) {
+        if (reset) {
+            const cmd = [MC_MODIFY, 0, this.length, []];
+            const modify_handle = this[data_to][MC_MODIFY].get(tar);
+            if (modify_handle) {
+                const [fn, data] = modify_handle;
+                fn(this, tar, data, cmd, this, []);
+            }
+            const edit_handle = this[data_to][MC_EDIT].get(tar);
+            if (edit_handle) {
+                const [fn, data] = edit_handle;
+                fn(this, tar, data, [cmd]);
+            }
+        }
+        for (const set of this[data_to]) {
+            set.delete(tar);
+        }
+    }
 
     // 守卫器
 
@@ -227,16 +254,21 @@ global.MahadArray = class MahadArray extends Array {
                 }
             },
         });
-        if (into) for (let i = 0; i < this.length; i++) {
-            into(this[i], i);
-        }
         return this;
     }
 
     // 连接器 (单向)
 
+    bind_values(src) {
+        return this.bind_from(src, {
+            [MC_MODIFY]: (src, tar, data, cmd, del, val) => {
+                if (del !== undefined) tar.delete_at(del);
+                if (val !== undefined) tar.postfix(val);
+            },
+        });
+    }
     bind_map(src, fn) {
-        const data = [].guard(null, null, links => links.forEach(([m, id]) => m.unset_to(id)));
+        const data = [].guard(null, null, links => links.forEach(([m, id]) => m.unlisten(id)));
         const handle_modify = (_, tar, data, [, offset, delete_count, inserts]) => {
             const insert_links_set = [];
             tar.modify(offset, delete_count, inserts.map((v, i) => {
@@ -253,8 +285,7 @@ global.MahadArray = class MahadArray extends Array {
             }));
             data.modify(offset, delete_count, insert_links_set);
         };
-        handle_modify(src, this, data, [MC_MODIFY, 0, 0, src]);
-        return this.bind(src, {
+        return this.bind_from(src, {
             [MC_MOVE]: (_, tar, data, cmd) => {
                 tar.edit(cmd);
                 data.edit(cmd);
@@ -265,28 +296,26 @@ global.MahadArray = class MahadArray extends Array {
     bind_reduce(src, fn, init_value) {
         const data = [];
         const update = () => {
-            data[0]?.forEach(([m, id]) => m.unset_to(id));
+            data[0]?.forEach(([m, id]) => m.unlisten(id));
             const links = [];
             const mark = _make_marker(links, update);
             this.val = src.reduce((pre, cur, index) => fn(pre, cur, index, mark), init_value);
             data[0] = links;
         };
-        update();
-        return this.bind(src, {
+        return this.bind_from(src, {
             [MC_MODIFY]: update,
         }, data);
     }
     bind_sort(src, fn) {
         const data = [];
         const update = () => {
-            data[0]?.forEach(([m, id]) => m.unset_to(id));
+            data[0]?.forEach(([m, id]) => m.unlisten(id));
             const links = [];
             const mark = _make_marker(links, update);
             this.assign(src.toSorted((a, b) => fn(a, b, mark)));
             data[0] = links;
         };
-        update();
-        return this.bind(src, {
+        return this.bind_from(src, {
             [MC_MODIFY]: update,
         }, data);
     }
@@ -365,42 +394,109 @@ global.MahadObject = class MahadObject extends Object {
         return this.edit(keys.map(k => [MC_MODIFY, k, undefined]));
     }
     assign(obj) {
-        return this.edit(...Object.entries(obj).map(([k, v]) => [MC_MODIFY, k, v]));
+        return this.edit(
+            ...Object.entries(this).map(([k]) => [MC_MODIFY, k, undefined]),
+            ...Object.entries(obj).map(([k, v]) => [MC_MODIFY, k, v]),
+        );
     }
     set(key, value) {
         return this.edit([MC_MODIFY, key, value]);
+    }
+    clear() {
+        return this.edit(
+            ...Object.entries(this).map(([k]) => [MC_MODIFY, k, undefined]),
+        );
+    }
+
+    // 推送器
+
+    set_to(tar, fns, data = [], reset = true) {
+        const vdata_to = this[data_to];
+        for (const type in fns) {
+            vdata_to[type].set(tar, [fns[type], data]);
+        }
+        if (reset) {
+            const cmds = Object.entries(this).map(([key, value]) => [MC_MODIFY, key, value]);
+            for (const cmd of cmds) {
+                fns[MC_MODIFY]?.(this, tar, data, cmd, undefined, cmd[2]);
+            }
+            fns[MC_EDIT]?.(this, tar, data, cmds);
+        }
+    }
+    unset_to(tar, reset = true) {
+        if (reset) {
+            const cmd_pairs = Object.entries(this).map(([key, value]) => [[MC_MODIFY, key, undefined], value]);
+            const modify_handle = this[data_to][MC_MODIFY].get(tar);
+            if (modify_handle) {
+                const [fn, data] = modify_handle;
+                for (const [cmd, value] of cmd_pairs) {
+                    fn(this, tar, data, cmd, value, undefined);
+                }
+            }
+            const edit_handle = this[data_to][MC_EDIT].get(tar);
+            if (edit_handle) {
+                const [fn, data] = edit_handle;
+                fn(this, tar, data, cmd_pairs.map(p => p[0]));
+            }
+        }
+        for (const set of this[data_to]) {
+            set.delete(tar);
+        }
     }
 
     // 守卫器
 
     guard(id, into, outof) {
         this.set_to(id, {
-            [MC_MODIFY]: (src, tar, data, [, key], del, value) => {
+            [MC_MODIFY]: (src, tar, data, [, key], del, val) => {
                 if (outof && del !== undefined) outof(del, key);
-                if (into && value !== undefined) into(value, key);
+                if (into && val !== undefined) into(val, key);
             },
         });
-        if (into) for (const [key, value] of Object.entries(this)) {
-            into(value, key);
-        }
         return this;
     }
 
     // 连接器 (单向)
 
+    bind_map(src, fn) {
+        const data = ({}).guard(null, null, links => links.forEach(([m, id]) => m.unlisten(id)));
+        const handle_modify = (_, tar, data, [, key, value]) => {
+            if (value !== undefined) {
+                const links = [];
+                const update = () => {
+                    const links = [];
+                    tar.set(key, fn(value, key, _make_marker(links, update)));
+                    data.set(key, links);
+                };
+                tar.modify(key, fn(value, key, _make_marker(links, update)));
+                data.set(key, links);
+            } else {
+                tar.modify(key, value);
+                data.modify(key, value);
+            }
+        };
+        return this.bind_from(src, {
+            [MC_MODIFY]: handle_modify,
+        }, data);
+    }
     bind_reduce(src, fn, init_value) {
         const data = [];
         const update = () => {
-            data[0]?.forEach(([m, id]) => m.unset_to(id));
+            data[0]?.forEach(([m, id]) => m.unlisten(id));
             const links = [];
             const mark = _make_marker(links, update);
             this.val = src.reduce((pre, cur, key) => fn(pre, cur, key, mark), init_value);
             data[0] = links;
         };
-        update();
-        return this.bind(src, {
+        return this.bind_from(src, {
             [MC_EDIT]: update,
         }, data);
+    }
+    bvalues() {
+        return new Array().bind_values(this);
+    }
+    bmap(fn) {
+        return new this.constructor().bind_map(this, fn);
     }
     breduce(fn, init_value) {
         return new this.constructor().bind_reduce(this, fn, init_value);

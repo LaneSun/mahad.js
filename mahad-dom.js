@@ -93,9 +93,13 @@ global.MahadElem = class MahadElem extends MahadObject {
         this.elem[EMK_MAHAD] = this;
     }
     attr(key, mattr = ['']) {
-        const guard = EM_ATTR_GUARDS[key];
-        if (guard) this.set(key, mattr.guard(null, ...guard(this.elem, mattr)));
-        return this;
+        if (key in this) {
+            return this[key];
+        } else {
+            const guard = EM_ATTR_GUARDS[key];
+            if (guard) this.set(key, mattr.guard(null, ...guard(this.elem, mattr)));
+            return mattr;
+        }
     }
     attach(elem_or_query) {
         if (typeof elem_or_query === "string") {
@@ -103,7 +107,7 @@ global.MahadElem = class MahadElem extends MahadObject {
         } else if (elem_or_query instanceof HTMLElement) {
             elem_or_query.append(this.elem);
         } else if (elem_or_query instanceof MahadElem) {
-            elem_or_query.postfix(this);
+            elem_or_query.attr("inner").postfix(this);
         } else {
             throw "Unexpect attach target";
         }
