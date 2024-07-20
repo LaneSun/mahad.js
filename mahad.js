@@ -269,7 +269,7 @@ global.MahadArray = class MahadArray extends Array {
     }
     bind_map(src, fn) {
         const data = [].guard(null, null, links => links.forEach(([m, id]) => m.unlisten(id)));
-        const handle_modify = (_, tar, data, [, offset, delete_count, inserts]) => {
+        const handle_modify = (src, tar, data, [, offset, delete_count, inserts]) => {
             const insert_links_set = [];
             tar.modify(offset, delete_count, inserts.map((v, i) => {
                 const index = offset + i;
@@ -291,6 +291,22 @@ global.MahadArray = class MahadArray extends Array {
                 data.edit(cmd);
             },
             [MC_MODIFY]: handle_modify,
+        }, data);
+    }
+    bind_flat(src) {
+        const data = [].guard(null, null, ([m, id]) => m.unlisten(id));
+        const update = () => {
+            this.assign(src.flat(1));
+        };
+        return this.bind_from(src, {
+            [MC_MODIFY]: (src, tar, data, [, offset, delete_count, inserts]) => {
+                data.modify(offset, delete_count, inserts.map(m => {
+                    const id = Symbol();
+                    m.listen(id, update);
+                    return [m, id];
+                }));
+            },
+            [MC_EDIT]: update,
         }, data);
     }
     bind_reduce(src, fn, init_value) {
@@ -318,6 +334,9 @@ global.MahadArray = class MahadArray extends Array {
         return this.bind_from(src, {
             [MC_MODIFY]: update,
         }, data);
+    }
+    bflat() {
+        return new this.constructor().bind_flat(this);
     }
     bmap(fn) {
         return new this.constructor().bind_map(this, fn);
