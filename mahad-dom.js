@@ -64,10 +64,18 @@ const EM_ATTR_GUARDS = {
         ];
     },
     "style": elem => [
-        (val, key) => val.guard(elem, v => elem.style.setProperty(key, v)),
         (val, key) => {
+            if (val instanceof Array) {
+                val.guard(elem, v => elem.style.setProperty(key, v));
+            } else {
+                elem.style.setProperty(key, val);
+            }
+        },
+        (val, key) => {
+            if (val instanceof Array) {
+                val.unset_to(elem);
+            }
             elem.style.removeProperty(key);
-            val.unset_to(elem);
         },
     ],
     "inner": elem => [

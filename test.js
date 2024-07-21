@@ -1,5 +1,13 @@
 // TEST
 
+Array.prototype.toString = function toString() {
+    return `(${this.map(v => v.toString()).join(' ')})`;
+};
+
+Object.prototype.toString = function toString() {
+    return `(${Object.entries(this).map(([k, v]) => k.toString() + ":" + v.toString()).join(' ')})`;
+};
+
 const eq = (a, b) => {
     if (a.toString() !== b.toString()) {
         console.error("Assertion failed");

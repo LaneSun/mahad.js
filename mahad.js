@@ -82,10 +82,6 @@ global.MahadArray = class MahadArray extends Array {
         return res.reverse();
     }
 
-    toString() {
-        return `(${this.map(v => v.toString()).join(' ')})`;
-    }
-
     // 读取器
 
     get val() {
@@ -182,7 +178,8 @@ global.MahadArray = class MahadArray extends Array {
         return this.modify(offset, delete_count, []);
     }
     delete_at(value, delete_count = 1) {
-        return this.delete(this.indexOf(value), delete_count);
+        const offset = this.indexOf(value);
+        return offset >= 0 ? this.delete(this.indexOf(value), delete_count) : [];
     }
     prefix(...values) {
         return this.modify(0, 0, values);
@@ -376,10 +373,6 @@ global.MahadObject = class MahadObject extends Object {
             init_value = fn.call(this, init_value, value, key);
         }
         return init_value;
-    }
-
-    toString() {
-        return `(${Object.entries(this).map(([k, v]) => k.toString() + ":" + v.toString()).join(' ')})`;
     }
 
     // 修改器
