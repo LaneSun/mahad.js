@@ -411,9 +411,6 @@ global.MahadObject = class MahadObject extends Object {
             ...Object.entries(obj).map(([k, v]) => [MC_MODIFY, k, v]),
         );
     }
-    set(key, value) {
-        return this.edit([MC_MODIFY, key, value]);
-    }
     clear() {
         return this.edit(
             ...Object.entries(this).map(([k]) => [MC_MODIFY, k, undefined]),
@@ -477,11 +474,11 @@ global.MahadObject = class MahadObject extends Object {
                 const links = [];
                 const update = () => {
                     const links = [];
-                    tar.set(key, fn(value, key, _make_marker(links, update)));
-                    data.set(key, links);
+                    tar.modify(key, fn(value, key, _make_marker(links, update)));
+                    data.modify(key, links);
                 };
                 tar.modify(key, fn(value, key, _make_marker(links, update)));
-                data.set(key, links);
+                data.modify(key, links);
             } else {
                 tar.modify(key, value);
                 data.modify(key, value);

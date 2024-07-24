@@ -105,7 +105,7 @@ global.MahadElem = class MahadElem extends MahadObject {
             return this[key];
         } else {
             const guard = EM_ATTR_GUARDS[key];
-            if (guard) this.set(key, mattr.guard(null, ...guard(this.elem, mattr)));
+            if (guard) this.modify(key, mattr.guard(null, ...guard(this.elem, mattr)));
             return mattr;
         }
     }
