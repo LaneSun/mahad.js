@@ -115,7 +115,7 @@ global.MahadElem = class MahadElem extends MahadObject {
         } else if (elem_or_query instanceof HTMLElement) {
             elem_or_query.append(this.elem);
         } else if (elem_or_query instanceof MahadElem) {
-            elem_or_query.attr("inner").postfix(this);
+            elem_or_query.attr("inner").suffix(this);
         } else {
             throw "Unexpect attach target";
         }

@@ -184,13 +184,13 @@ global.MahadArray = class MahadArray extends Array {
     prefix(...values) {
         return this.modify(0, 0, values);
     }
-    postfix(...values) {
+    suffix(...values) {
         return this.modify(this.length, 0, values);
     }
     unprefix(delete_count) {
         return this.delete(0, delete_count);
     }
-    unpostfix(delete_count) {
+    unsuffix(delete_count) {
         return this.delete(this.length - delete_count, delete_count);
     }
     assign(new_values) {
@@ -260,7 +260,7 @@ global.MahadArray = class MahadArray extends Array {
         return this.bind_from(src, {
             [MC_MODIFY]: (src, tar, data, cmd, del, val) => {
                 if (del !== undefined) tar.delete_at(del);
-                if (val !== undefined) tar.postfix(val);
+                if (val !== undefined) tar.suffix(val);
             },
         });
     }
