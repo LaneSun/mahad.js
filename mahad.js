@@ -43,12 +43,21 @@ class Shared {
         this.unset_to(id, false);
     }
 
+    // 守卫器
+
+    unguard(id) {
+        this.unset_to(id);
+    }
+
     // 连接器 (单向)
 
     bind_from(src, fns, data) {
         this.clear();
         src.set_to(this, fns, data);
         return this;
+    }
+    unbind_from(src) {
+        this.unset_to(src);
     }
     bind_clone(src) {
         return this.bind_from(src, {
@@ -201,6 +210,18 @@ global.MahadArray = class MahadArray extends Array {
     }
     set val(value) {
         this.modify(0, 1, [value]);
+    }
+    toggle(value) {
+        if (value !== undefined) {
+            const offset = this.indexOf(value);
+            if (offset >= 0) {
+                this.delete(offset);
+            } else {
+                this.suffix(value);
+            }
+        } else {
+            this.val = !this.val;
+        }
     }
     clear() {
         return this.modify(0, this.length, []);

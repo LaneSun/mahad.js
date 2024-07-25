@@ -55,6 +55,16 @@ const EM_ATTR_GUARDS = {
     "src": elem => [
         val => elem.src = val,
     ],
+    "show": elem => [
+        val => {
+            elem.hidden = !val;
+            if (val) {
+                elem.classList.remove("f-hide");
+            } else {
+                elem.classList.add("f-hide");
+            }
+        },
+    ],
     "value": (elem, mattr) => {
         elem.addEventListener("change", () => {
             mattr.val = elem.value;
@@ -78,9 +88,25 @@ const EM_ATTR_GUARDS = {
             elem.style.removeProperty(key);
         },
     ],
+    "on": elem => [
+        (val, key) => {
+            if (val instanceof Array) {
+                val.guard(elem, v => elem.addEventListener(key, v));
+            } else {
+                elem.addEventListener(key, val);
+            }
+        },
+        (val, key) => {
+            if (val instanceof Array) {
+                val.unguard(elem);
+            } else {
+                elem.removeEventListener(key, val);
+            }
+        }
+    ],
     "inner": elem => [
         (v, i) => {
-            const e = v instanceof MahadElem ? v.elem : v instanceof Node ? v : new Text(v);
+            const e = val_to_elem(v);
             if (i === elem.childNodes.length) {
                 elem.append(e);
             } else {
@@ -92,6 +118,24 @@ const EM_ATTR_GUARDS = {
         },
     ],
 };
+
+const val_to_elem = val => {
+    if (val instanceof MahadElem) {
+        return val.elem;
+    } else if (val instanceof Node) {
+        return val;
+    } else if (globalThis.jQuery && val instanceof jQuery) {
+        return val[0];
+    } else if (val instanceof Promise) {
+        const placeholder = make_placeholder();
+        val.then(v => placeholder.replaceWith(val_to_elem(v)));
+        return placeholder;
+    } else if (typeof val !== "object") {
+        return new Text(val);
+    }
+}
+
+const make_placeholder = () => document.createElement("div");
 
 global.MahadElem = class MahadElem extends MahadObject {
     constructor(name = "div") {
@@ -116,6 +160,8 @@ global.MahadElem = class MahadElem extends MahadObject {
             elem_or_query.append(this.elem);
         } else if (elem_or_query instanceof MahadElem) {
             elem_or_query.attr("inner").suffix(this);
+        } else if (globalThis.jQuery && elem_or_query instanceof jQuery) {
+            elem_or_query.append(this.elem);
         } else {
             throw "Unexpect attach target";
         }
