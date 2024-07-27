@@ -69,6 +69,15 @@ class Shared {
     make_bind(fns, data) {
         return new this.constructor().bind_from(this, fns, data);
     }
+    bmap(fn) {
+        return new this.constructor().bind_map(this, fn);
+    }
+    bfilter(fn) {
+        return new this.constructor().bind_filter(this, fn);
+    }
+    breduce(fn, init_value) {
+        return new this.constructor().bind_reduce(this, fn, init_value);
+    }
     bclone() {
         return new this.constructor().bind_clone(this);
     }
@@ -277,6 +286,14 @@ global.MahadArray = class MahadArray extends Array {
 
     // 连接器 (单向)
 
+    bind_keys(src) {
+        return this.bind_from(src, {
+            [MC_MODIFY]: (src, tar, data, [, key], del, val) => {
+                if (del !== undefined && val === undefined) tar.delete_at(key);
+                if (val !== undefined && del === undefined) tar.suffix(key);
+            },
+        });
+    }
     bind_values(src) {
         return this.bind_from(src, {
             [MC_MODIFY]: (src, tar, data, cmd, del, val) => {
@@ -308,6 +325,43 @@ global.MahadArray = class MahadArray extends Array {
                 tar.edit(cmd);
                 data.edit(cmd);
             },
+            [MC_MODIFY]: handle_modify,
+        }, data);
+    }
+    bind_filter(src, fn) {
+        const data = new WeakMap();
+        const data_set = (key, links) => {
+            data.set(key, links);
+        };
+        const data_unset = key => {
+            for (const [m, id] of data.get(key)) {
+                m.unlisten(id);
+            }
+            data.delete(key);
+        };
+        const handle_modify = (src, tar, data, [, offset], deletes, inserts) => {
+            for (const del of deletes) {
+                tar.delete_at(del);
+                data_unset(del);
+            }
+            inserts.forEach((ins, i) => {
+                const index = offset + i;
+                const update = () => {
+                    data_unset(ins);
+                    const insert_links = [];
+                    const res = fn(ins, index, _make_marker(insert_links, update));
+                    const exists = tar.includes(ins);
+                    if (res && !exists) {
+                        tar.suffix(ins);
+                    } else if (!res && exists) {
+                        tar.delete_at(ins);
+                    }
+                    data_set(ins, insert_links);
+                };
+                update();
+            });
+        };
+        return this.bind_from(src, {
             [MC_MODIFY]: handle_modify,
         }, data);
     }
@@ -355,12 +409,6 @@ global.MahadArray = class MahadArray extends Array {
     }
     bflat() {
         return new this.constructor().bind_flat(this);
-    }
-    bmap(fn) {
-        return new this.constructor().bind_map(this, fn);
-    }
-    breduce(fn, init_value) {
-        return new this.constructor().bind_reduce(this, fn, init_value);
     }
     bsort(fn) {
         return new this.constructor().bind_sort(this, fn);
@@ -490,7 +538,7 @@ global.MahadObject = class MahadObject extends Object {
 
     bind_map(src, fn) {
         const data = ({}).guard(null, null, links => links.forEach(([m, id]) => m.unlisten(id)));
-        const handle_modify = (_, tar, data, [, key, value]) => {
+        const handle_modify = (src, tar, data, [, key, value]) => {
             if (value !== undefined) {
                 const links = [];
                 const update = () => {
@@ -503,6 +551,32 @@ global.MahadObject = class MahadObject extends Object {
             } else {
                 tar.modify(key, value);
                 data.modify(key, value);
+            }
+        };
+        return this.bind_from(src, {
+            [MC_MODIFY]: handle_modify,
+        }, data);
+    }
+    bind_filter(src, fn) {
+        const data = ({}).guard(null, null, links => links.forEach(([m, id]) => m.unlisten(id)));
+        const handle_modify = (src, tar, data, [, key], del, ins) => {
+            if (del !== undefined) {
+                tar.delete(key);
+                data.delete(key);
+            }
+            if (ins !== undefined) {
+                const update = () => {
+                    const insert_links = [];
+                    const res = fn(ins, key, _make_marker(insert_links, update));
+                    const exists = key in tar;
+                    if (res && !exists) {
+                        tar.modify(key, ins);
+                    } else if (!res && exists) {
+                        tar.delete(key);
+                    }
+                    data.modify(key, insert_links);
+                };
+                update();
             }
         };
         return this.bind_from(src, {
@@ -522,14 +596,11 @@ global.MahadObject = class MahadObject extends Object {
             [MC_EDIT]: update,
         }, data);
     }
+    bkeys() {
+        return new Array().bind_keys(this);
+    }
     bvalues() {
         return new Array().bind_values(this);
-    }
-    bmap(fn) {
-        return new this.constructor().bind_map(this, fn);
-    }
-    breduce(fn, init_value) {
-        return new this.constructor().bind_reduce(this, fn, init_value);
     }
 };
 Object.defineProperties(MahadObject.prototype, SharedProto);

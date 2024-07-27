@@ -37,23 +37,14 @@ const _me_handle_tail = {
 
 global.ME = new Proxy(() => {}, _me_handle_head);
 
-const EMK_MAHAD = Symbol("mahad");
+const EMK_MAHAD = Symbol("mahad-elem");
 const EM_ATTR_GUARDS = {
-    "id": elem => [
-        val => elem.id = val,
-    ],
-    "title": elem => [
-        val => elem.title = val,
-    ],
     "text": elem => [
         val => elem.textContent = val,
     ],
     "class": elem => [
         val => elem.classList.add(val),
         val => elem.classList.remove(val),
-    ],
-    "src": elem => [
-        val => elem.src = val,
     ],
     "show": elem => [
         val => {
@@ -73,37 +64,55 @@ const EM_ATTR_GUARDS = {
             val => elem.value = val,
         ];
     },
-    "style": elem => [
-        (val, key) => {
-            if (val instanceof Array) {
-                val.guard(elem, v => elem.style.setProperty(key, v));
-            } else {
-                elem.style.setProperty(key, val);
-            }
-        },
-        (val, key) => {
-            if (val instanceof Array) {
-                val.unset_to(elem);
-            }
-            elem.style.removeProperty(key);
-        },
-    ],
-    "on": elem => [
-        (val, key) => {
-            if (val instanceof Array) {
-                val.guard(elem, v => elem.addEventListener(key, v));
-            } else {
-                elem.addEventListener(key, val);
-            }
-        },
-        (val, key) => {
-            if (val instanceof Array) {
-                val.unguard(elem);
-            } else {
-                elem.removeEventListener(key, val);
-            }
-        }
-    ],
+    "style": elem => {
+        const handles = [
+            (val, key) => {
+                if (key === 0) {
+                    val.guard(elem, ...handles);
+                } else {
+                    if (val instanceof Array) {
+                        val.guard(elem, v => elem.style.setProperty(key, v));
+                    } else {
+                        elem.style.setProperty(key, val);
+                    }
+                }
+            },
+            (val, key) => {
+                if (key === 0) {
+                    val.unguard(elem);
+                } else {
+                    if (val instanceof Array) {
+                        val.unset_to(elem);
+                    }
+                    elem.style.removeProperty(key);
+                }
+            },
+        ];
+        return handles;
+    },
+    "on": elem => {
+        const handles = [
+            (val, key) => {
+                if (key === 0) {
+                    val.guard(elem, ...handles);
+                } else {
+                    if (val instanceof Array) {
+                        val.guard(elem, v => elem.addEventListener(key, v));
+                    } else {
+                        elem.addEventListener(key, val);
+                    }
+                }
+            },
+            (val, key) => {
+                if (val instanceof Array) {
+                    val.unguard(elem);
+                } else {
+                    elem.removeEventListener(key, val);
+                }
+            },
+        ];
+        return handles;
+    },
     "inner": elem => [
         (v, i) => {
             const e = val_to_elem(v);
@@ -136,6 +145,7 @@ const val_to_elem = val => {
 }
 
 const make_placeholder = () => document.createElement("div");
+const snake_case_to_camel_case = str => str.toLowerCase().replace(/(_\w)/g, m => m[1].toUpperCase());
 
 global.MahadElem = class MahadElem extends MahadObject {
     constructor(name = "div") {
@@ -149,11 +159,17 @@ global.MahadElem = class MahadElem extends MahadObject {
             return this[key];
         } else {
             const guard = EM_ATTR_GUARDS[key];
-            if (guard) this.modify(key, mattr.guard(null, ...guard(this.elem, mattr)));
+            if (guard) {
+                this.modify(key, mattr.guard(null, ...guard(this.elem, mattr)));
+            } else {
+                const attr_name = snake_case_to_camel_case(key);
+                this.modify(key, mattr.guard(null, val => this.elem[attr_name] = val));
+            }
             return mattr;
         }
     }
     attach(elem_or_query) {
+        this.remove();
         if (typeof elem_or_query === "string") {
             document.querySelector(elem_or_query).append(this.elem);
         } else if (elem_or_query instanceof HTMLElement) {
@@ -165,6 +181,24 @@ global.MahadElem = class MahadElem extends MahadObject {
         } else {
             throw "Unexpect attach target";
         }
+    }
+    remove(node = null) {
+        if (node) {
+            this.inner.delete_at(node);
+        } else {
+            const parent = this.elem.parentNode?.[EMK_MAHAD];
+            if (parent) {
+                parent.remove(this);
+            } else {
+                this.elem.remove();
+            }
+        }
+    }
+    get rect() {
+        return this.elem.getClientRects()[0];
+    }
+    focus() {
+        this.elem.focus();
     }
 };
 
