@@ -7,6 +7,7 @@ const MC_SIZE = 3;
 
 const data_to = Symbol("data_to");
 const data_to_field = Symbol("data_to_field");
+const s_logger = Symbol("logger");
 
 const _make_marker = (links, updater) => m => {
     const id = Symbol();
@@ -268,6 +269,12 @@ global.MahadArray = class MahadArray extends Array {
         }
     }
 
+    // 监听器
+
+    blogger() {
+        return this.listen(s_logger, self => console.log([...self]));
+    }
+
     // 守卫器
 
     guard(id, into, outof) {
@@ -472,7 +479,7 @@ global.MahadObject = class MahadObject extends Object {
         return res;
     }
     delete(...keys) {
-        return this.edit(keys.map(k => [MC_MODIFY, k, undefined]));
+        return this.edit(...keys.map(k => [MC_MODIFY, k, undefined]));
     }
     assign(obj) {
         return this.edit(
@@ -520,6 +527,18 @@ global.MahadObject = class MahadObject extends Object {
         for (const set of this[data_to]) {
             set.delete(tar);
         }
+    }
+
+    // 监听器
+
+    blogger() {
+        return this.listen(s_logger, self => {
+            const obj = {};
+            for (const k in self) {
+                obj[k] = self[k];
+            }
+            console.log(obj);
+        });
     }
 
     // 守卫器

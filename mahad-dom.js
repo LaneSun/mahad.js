@@ -160,10 +160,10 @@ global.MahadElem = class MahadElem extends MahadObject {
         } else {
             const guard = EM_ATTR_GUARDS[key];
             if (guard) {
-                this.modify(key, mattr.guard(null, ...guard(this.elem, mattr)));
+                this.modify(key, mattr.guard(this, ...guard(this.elem, mattr)));
             } else {
                 const attr_name = snake_case_to_camel_case(key);
-                this.modify(key, mattr.guard(null, val => this.elem[attr_name] = val));
+                this.modify(key, mattr.guard(this, val => this.elem[attr_name] = val));
             }
             return mattr;
         }
