@@ -200,6 +200,9 @@ global.MahadElem = class MahadElem extends MahadObject {
     focus() {
         this.elem.focus();
     }
+    listen(event, handle, options) {
+        this.elem.addEventListener(event, handle, options);
+    }
 };
 
 })(globalThis);

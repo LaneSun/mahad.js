@@ -487,6 +487,11 @@ global.MahadObject = class MahadObject extends Object {
             ...Object.entries(obj).map(([k, v]) => [MC_MODIFY, k, v]),
         );
     }
+    merge(obj) {
+        return this.edit(
+            ...Object.entries(obj).map(([k, v]) => [MC_MODIFY, k, v]),
+        );
+    }
     clear() {
         return this.edit(
             ...Object.entries(this).map(([k]) => [MC_MODIFY, k, undefined]),
