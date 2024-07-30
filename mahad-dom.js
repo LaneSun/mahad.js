@@ -173,7 +173,12 @@ global.MahadElem = class MahadElem extends MahadObject {
         if (typeof elem_or_query === "string") {
             document.querySelector(elem_or_query).append(this.elem);
         } else if (elem_or_query instanceof HTMLElement) {
-            elem_or_query.append(this.elem);
+            const melem = elem_or_query[EMK_MAHAD];
+            if (melem) {
+                melem.attr("inner").suffix(this);
+            } else {
+                elem_or_query.append(this.elem);
+            }
         } else if (elem_or_query instanceof MahadElem) {
             elem_or_query.attr("inner").suffix(this);
         } else if (globalThis.jQuery && elem_or_query instanceof jQuery) {
@@ -184,7 +189,7 @@ global.MahadElem = class MahadElem extends MahadObject {
     }
     remove(node = null) {
         if (node) {
-            this.inner.delete_at(node);
+            this.attr("inner").delete_at(node);
         } else {
             const parent = this.elem.parentNode?.[EMK_MAHAD];
             if (parent) {
