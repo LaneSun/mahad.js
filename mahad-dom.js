@@ -154,7 +154,7 @@ global.MahadElem = class MahadElem extends MahadObject {
         this.elem = document.createElement(this.name);
         this.elem[EMK_MAHAD] = this;
     }
-    attr(key, mattr = ['']) {
+    attr(key, mattr = []) {
         if (key in this) {
             return this[key];
         } else {
@@ -163,7 +163,7 @@ global.MahadElem = class MahadElem extends MahadObject {
                 this.modify(key, mattr.guard(this, ...guard(this.elem, mattr)));
             } else {
                 const attr_name = snake_case_to_camel_case(key);
-                this.modify(key, mattr.guard(this, val => this.elem[attr_name] = val));
+                this.modify(key, mattr.guard(this, val => this.elem.setAttribute(attr_name, val)));
             }
             return mattr;
         }
