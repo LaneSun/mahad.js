@@ -123,7 +123,7 @@ const EM_ATTR_GUARDS = {
             }
         },
         (v, i) => {
-            elem.childNodes[i].remove();
+            elem.childNodes[i]?.remove();
         },
     ],
 };
