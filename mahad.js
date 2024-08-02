@@ -70,6 +70,19 @@ class Shared {
     make_bind(fns, data) {
         return new this.constructor().bind_from(this, fns, data);
     }
+    bind_trans(src, fn) {
+        const data = [];
+        const update = () => {
+            data[0]?.forEach(([m, id]) => m.unlisten(id));
+            const links = [];
+            const mark = _make_marker(links, update);
+            this.assign(fn(src, mark));
+            data[0] = links;
+        };
+        return this.bind_from(src, {
+            [MC_EDIT]: update,
+        }, data);
+    }
     bmap(fn) {
         return new this.constructor().bind_map(this, fn);
     }
@@ -81,6 +94,9 @@ class Shared {
     }
     bclone() {
         return new this.constructor().bind_clone(this);
+    }
+    btrans(tar, fn) {
+        return tar.bind_trans(this, fn);
     }
 }
 const SharedProto = Object.getOwnPropertyDescriptors(Shared.prototype);
@@ -272,7 +288,9 @@ global.MahadArray = class MahadArray extends Array {
     // 监听器
 
     blogger() {
-        return this.listen(s_logger, self => console.log([...self]));
+        const logger = self => console.log([...self]);
+        logger(this);
+        return this.listen(s_logger, logger);
     }
 
     // 守卫器
@@ -537,13 +555,15 @@ global.MahadObject = class MahadObject extends Object {
     // 监听器
 
     blogger() {
-        return this.listen(s_logger, self => {
+        const logger = self => {
             const obj = {};
             for (const k in self) {
                 obj[k] = self[k];
             }
             console.log(obj);
-        });
+        };
+        logger(this);
+        return this.listen(s_logger, logger);
     }
 
     // 守卫器
