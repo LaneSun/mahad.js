@@ -123,6 +123,12 @@ global.MahadArray = class MahadArray extends Array {
         return this[0];
     }
 
+    // 辅助方法
+
+    num_sorted() {
+        return this.toSorted((a, b) => a - b);
+    }
+
     // 修改器
 
     edit(...cmds) {

@@ -211,6 +211,11 @@ global.MahadElem = class MahadElem extends MahadObject {
     listen(event, handle, options) {
         this.elem.addEventListener(event, handle, options);
     }
+    select() {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.selectAllChildren(this.elem);
+    }
 };
 
 })(globalThis);
