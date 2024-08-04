@@ -186,6 +186,7 @@ global.MahadElem = class MahadElem extends MahadObject {
         } else {
             throw "Unexpect attach target";
         }
+        return this;
     }
     remove(node = null) {
         if (node) {
