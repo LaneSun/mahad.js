@@ -360,13 +360,13 @@ global.MahadArray = class MahadArray extends Array {
         }, data);
     }
     bind_filter(src, fn) {
-        const data = new WeakMap();
+        const data = new Map();
         const data_set = (key, links) => {
             data.set(key, links);
         };
         const data_unset = key => {
-            for (const [m, id] of data.get(key)) {
-                m.unlisten(id);
+            for (const links of data.get(key) ?? []) {
+                for (const [m, id] of links) m.unlisten(id);
             }
             data.delete(key);
         };

@@ -64,6 +64,14 @@ const EM_ATTR_GUARDS = {
             val => elem.value = val,
         ];
     },
+    "input": (elem, mattr) => {
+        elem.addEventListener("input", () => {
+            mattr.val = elem.value;
+        });
+        return [
+            val => elem.value = val,
+        ];
+    },
     "style": elem => {
         const handles = [
             (val, key) => {
