@@ -211,8 +211,8 @@ global.MahadElem = class MahadElem extends MahadObject {
     get rect() {
         return this.elem.getClientRects()[0];
     }
-    focus() {
-        this.elem.focus();
+    focus(opts) {
+        this.elem.focus(opts);
     }
     focused() {
         return document.activeElement === this.elem;
