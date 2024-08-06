@@ -42,6 +42,9 @@ const EM_ATTR_GUARDS = {
     "text": elem => [
         val => elem.textContent = val,
     ],
+    "html": elem => [
+        val => elem.innerHTML = val,
+    ],
     "class": elem => [
         val => elem.classList.add(val),
         val => elem.classList.remove(val),
