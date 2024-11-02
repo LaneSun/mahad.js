@@ -326,12 +326,12 @@ export class MahadArray extends Array {
             [MC_MODIFY]: (src, tar, data, [, offset], deletes, inserts) => {
                 if (outof) {
                     for (let i = deletes.length - 1; i >= 0; i--) {
-                        outof(deletes[i], offset + i);
+                        outof.call(this, deletes[i], offset + i);
                     }
                 }
                 if (into) {
                     for (let i = 0; i < inserts.length; i++) {
-                        into(inserts[i], offset + i);
+                        into.call(this, inserts[i], offset + i);
                     }
                 }
             },
