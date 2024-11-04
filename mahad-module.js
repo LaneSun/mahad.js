@@ -643,8 +643,8 @@ export class MahadObject extends Object {
     guard(id, into, outof) {
         this.set_to(id, {
             [MC_MODIFY]: (src, tar, data, [, key], del, val) => {
-                if (outof && del !== undefined) outof(del, key);
-                if (into && val !== undefined) into(val, key);
+                if (outof && del !== undefined) outof(del, key, val);
+                if (into && val !== undefined) into(val, key, del);
             },
         });
         return this;
