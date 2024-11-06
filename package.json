@@ -1,6 +1,6 @@
 {
   "name": "mahadjs",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "一个为JS数组和对象添加自动绑定功能的库",
   "author": "Lane Sun <lanesun@anlbrain.com> (https://lanesun.neocities.org/)",
   "main": "mahad-module.js",

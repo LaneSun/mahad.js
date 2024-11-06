@@ -650,6 +650,15 @@ export class MahadObject extends Object {
         return this;
     }
 
+    guard_key(id, into) {
+        this.set_to(id, {
+            [MC_MODIFY]: (src, tar, data, [, key], del, val) => {
+                if (into && val !== del) into(val, key, del);
+            },
+        });
+        return this;
+    }
+
     // 连接器 (单向)
 
     bind_map(src, fn) {
