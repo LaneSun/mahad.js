@@ -637,6 +637,16 @@ export class MahadObject extends Object {
         logger(this);
         return this.listen(s_logger, logger);
     }
+    listen_key(id, into) {
+        this.set_to(id, {
+            [MC_MODIFY]: (src, tar, data, [, key], del, val) => {
+                if (into && val !== del) into(val, key, del);
+            },
+        },
+        null,
+        false,);
+        return this;
+    }
 
     // 守卫器
 
